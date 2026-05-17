@@ -1,0 +1,186 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Withdrawals</h2>
+    <div class="text-muted small">Showing <%= withdrawals.length %> of <%= totalRecords %> Records</div>
+</div>
+
+<div class="stat-card mb-4">
+    <form action="/admin/withdrawals" method="GET" class="row g-3 p-3">
+        <input type="hidden" name="status" value="<%= currentFilter %>">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by User ID or Telegram ID..." value="<%= search %>">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="limit" class="form-select">
+                <option value="10" <%= limit == 10 ? 'selected' : '' %>>10 per page</option>
+                <option value="30" <%= limit == 30 ? 'selected' : '' %>>30 per page</option>
+                <option value="50" <%= limit == 50 ? 'selected' : '' %>>50 per page</option>
+                <option value="100" <%= limit == 100 ? 'selected' : '' %>>100 per page</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Apply</button>
+        </div>
+        <div class="col-md-2">
+            <a href="/admin/withdrawals?status=<%= currentFilter %>" class="btn btn-outline-secondary w-100">Clear</a>
+        </div>
+    </form>
+</div>
+
+<ul class="nav nav-pills mb-4 bg-white p-2 rounded shadow-sm d-inline-flex">
+    <li class="nav-item">
+        <a class="nav-link <%= currentFilter === 'all' ? 'active' : '' %>" href="/admin/withdrawals?status=all&limit=<%= limit %>&search=<%= search %>">All</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= currentFilter === 'pending' ? 'active' : '' %>" href="/admin/withdrawals?status=pending&limit=<%= limit %>&search=<%= search %>">Pending</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= currentFilter === 'approved' ? 'active' : '' %>" href="/admin/withdrawals?status=approved&limit=<%= limit %>&search=<%= search %>">Approved</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= currentFilter === 'rejected' ? 'active' : '' %>" href="/admin/withdrawals?status=rejected&limit=<%= limit %>&search=<%= search %>">Rejected</a>
+    </li>
+</ul>
+
+<div class="stat-card">
+    <div class="table-responsive">
+        <table class="table align-middle no-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>User ID</th>
+                    <th>Requested</th>
+                    <th>Processing Fee (20%)</th>
+                    <th>Net Payable</th>
+                    <th>Method / Details</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (withdrawals.length === 0) { %>
+                    <tr><td colspan="8" class="text-center py-4 text-muted">No withdrawals found.</td></tr>
+                <% } %>
+                <% withdrawals.forEach(w => { %>
+                    <tr>
+                        <td class="small"><%= w.createdAt.toLocaleString('en-IN') %></td>
+                        <td><a href="/admin/users/<%= w.userId %>" class="fw-bold"><%= w.userId %></a></td>
+                        <td class="text-muted"><%= w.amount.toFixed(2) %> USDT</td>
+                        <td class="text-danger small"><%= (w.taxAmount || 0).toFixed(2) %> USDT</td>
+                        <td class="fw-bold text-success" style="font-size: 1.1rem;">
+                            <%= (w.netAmount || w.amount).toFixed(2) %> USDT
+                        </td>
+                        <td class="small">
+                            <span class="badge bg-info text-dark mb-1">USDT</span><br>
+                            <strong>USDT Address:</strong><br>
+                            <code class="smallest"><%= w.usdtAddress %></code>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill bg-<%= w.status === 'approved' ? 'success' : (w.status === 'pending' ? 'warning' : 'danger') %>">
+                                <%= w.status %>
+                            </span>
+                            <% if (w.rejectionReason) { %>
+                                <div class="small text-danger mt-1">Reason: <%= w.rejectionReason %></div>
+                            <% } %>
+                        </td>
+                        <td>
+                            <% if (w.status === 'pending') { %>
+                                <div class="d-flex flex-column gap-2">
+                                    <form action="/admin/withdrawals/<%= w._id %>/approve" method="POST">
+                                        <button class="btn btn-sm btn-success w-100" onclick="return confirm('Are you sure you want to approve this withdrawal?')">Approve</button>
+                                    </form>
+                                    <button class="btn btn-sm btn-outline-danger w-100" onclick="rejectWithdrawal('<%= w._id %>')">Reject</button>
+                                </div>
+                            <% } else { %>
+                                <button class="btn btn-sm btn-outline-primary w-100" onclick="editWdStatus('<%= w._id %>', '<%= w.status %>')">Edit Status</button>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <% if (totalPages > 1) { %>
+        <div class="d-flex justify-content-center p-3 border-top">
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                        <a class="page-link" href="/admin/withdrawals?page=<%= page - 1 %>&limit=<%= limit %>&search=<%= search %>&status=<%= currentFilter %>">Previous</a>
+                    </li>
+                    <% for(let i=1; i<=totalPages; i++) { %>
+                        <li class="page-item <%= page === i ? 'active' : '' %>">
+                            <a class="page-link" href="/admin/withdrawals?page=<%= i %>&limit=<%= limit %>&search=<%= search %>&status=<%= currentFilter %>"><%= i %></a>
+                        </li>
+                    <% } %>
+                    <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                        <a class="page-link" href="/admin/withdrawals?page=<%= page + 1 %>&limit=<%= limit %>&search=<%= search %>&status=<%= currentFilter %>">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    <% } %>
+</div>
+
+<form id="rejectForm" method="POST" style="display: none;">
+    <input type="hidden" name="reason" id="rejectReason">
+</form>
+
+<script>
+function rejectWithdrawal(id) {
+    const reason = prompt("Enter reason for rejection (this will be sent to the user):");
+    if (reason) {
+        document.getElementById('rejectReason').value = reason;
+        document.getElementById('rejectForm').action = `/admin/withdrawals/${id}/reject`;
+        document.getElementById('rejectForm').submit();
+    }
+}
+
+function editWdStatus(id, currentStatus) {
+    const newStatus = prompt(`Enter new status (pending, approved, rejected, completed):`, currentStatus);
+    if (!newStatus || newStatus === currentStatus) return;
+    
+    const validStatuses = ['pending', 'approved', 'rejected', 'completed'];
+    if (!validStatuses.includes(newStatus)) {
+        alert('Invalid status. Use: pending, approved, rejected, or completed');
+        return;
+    }
+    
+    let reason = '';
+    if (newStatus === 'rejected') {
+        reason = prompt('Enter reason for status update/rejection:');
+        if (reason === null) return;
+    }
+    
+    if (confirm(`Change status to ${newStatus}? This may trigger balance refunds if changing to rejected.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/withdrawals/${id}/update-status`;
+        
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = newStatus;
+        form.appendChild(statusInput);
+        
+        const reasonInput = document.createElement('input');
+        reasonInput.type = 'hidden';
+        reasonInput.name = 'reason';
+        reasonInput.value = reason;
+        form.appendChild(reasonInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
+<style>
+    .no-hover tr:hover {
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }
+    .smallest { font-size: 0.7rem; }
+</style>

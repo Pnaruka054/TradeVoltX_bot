@@ -1,0 +1,112 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>User Management</h2>
+    <div class="text-muted small">Showing <%= users.length %> of <%= totalRecords %> Users</div>
+</div>
+
+<div class="stat-card mb-4">
+    <form action="/admin/users" method="GET" class="row g-3 p-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by ID, Name or TG ID..." value="<%= search %>">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select name="filter" class="form-select">
+                <option value="all" <%= filter === 'all' ? 'selected' : '' %>>All Status</option>
+                <option value="active" <%= filter === 'active' ? 'selected' : '' %>>Active Plan</option>
+                <option value="blocked" <%= filter === 'blocked' ? 'selected' : '' %>>Blocked Only</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="limit" class="form-select">
+                <option value="10" <%= limit == 10 ? 'selected' : '' %>>10 per page</option>
+                <option value="30" <%= limit == 30 ? 'selected' : '' %>>30 per page</option>
+                <option value="50" <%= limit == 50 ? 'selected' : '' %>>50 per page</option>
+                <option value="100" <%= limit == 100 ? 'selected' : '' %>>100 per page</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+        </div>
+        <div class="col-md-2">
+            <a href="/admin/users" class="btn btn-outline-secondary w-100">Clear</a>
+        </div>
+    </form>
+</div>
+
+<div class="stat-card">
+    <div class="table-responsive">
+        <table class="table align-middle no-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>User ID</th>
+                    <th>Name</th>
+                    <th>Plan Status</th>
+                    <th>Wallet Balance</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if(users.length === 0) { %>
+                    <tr><td colspan="6" class="text-center py-4 text-muted">No users found matching your criteria.</td></tr>
+                <% } %>
+                <% users.forEach(user => { %>
+                    <tr>
+                        <td><strong><%= user.userID %></strong></td>
+                        <td>
+                            <div><%= user.firstName %> <%= user.lastName || '' %></div>
+                            <div class="text-muted smallest">TG: <%= user.telegramId %></div>
+                        <td>
+                            <% 
+                                const activePlans = (user.activePlans || []).filter(p => p.isActive);
+                                const totalInvested = activePlans.reduce((acc, p) => acc + p.planAmount, 0);
+                            %>
+                            <span class="badge bg-<%= activePlans.length > 0 ? 'success' : 'secondary' %>">
+                                <%= activePlans.length > 0 ? `Active (${activePlans.length} Plans: ${totalInvested} USDT)` : 'Inactive' %>
+                            </span>
+                        </td>
+                            <% if(user.isBlocked) { %>
+                                <span class="badge bg-danger ms-1">Blocked</span>
+                            <% } %>
+                        </td>
+                        <td class="fw-bold"><%= user.walletBalance.toFixed(2) %> USDT</td>
+                        <td class="text-muted small"><%= user.createdAt.toLocaleDateString('en-IN') %></td>
+                        <td>
+                            <a href="/admin/users/<%= user.userID %>" class="btn btn-sm btn-outline-primary">View Detail</a>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <% if (totalPages > 1) { %>
+        <div class="d-flex justify-content-center p-3 border-top">
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                        <a class="page-link" href="/admin/users?page=<%= page - 1 %>&limit=<%= limit %>&search=<%= search %>&filter=<%= filter %>">Previous</a>
+                    </li>
+                    <% for(let i=1; i<=totalPages; i++) { %>
+                        <li class="page-item <%= page === i ? 'active' : '' %>">
+                            <a class="page-link" href="/admin/users?page=<%= i %>&limit=<%= limit %>&search=<%= search %>&filter=<%= filter %>"><%= i %></a>
+                        </li>
+                    <% } %>
+                    <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                        <a class="page-link" href="/admin/users?page=<%= page + 1 %>&limit=<%= limit %>&search=<%= search %>&filter=<%= filter %>">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    <% } %>
+</div>
+
+<style>
+    .no-hover tr:hover {
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }
+    .smallest { font-size: 0.75rem; }
+</style>

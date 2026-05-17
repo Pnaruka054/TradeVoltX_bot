@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .admin-sidebar { width: 260px; position: fixed; top: 0; left: 0; bottom: 0; z-index: 1000; }
+        .admin-content { margin-left: 260px; transition: margin-left 0.3s; }
+        .mobile-toggle { display: none; }
+        
+        @media (max-width: 991px) {
+            .admin-sidebar { transform: translateX(-100%); }
+            .admin-sidebar.show { transform: translateX(0); }
+            .admin-content { margin-left: 0 !important; }
+            .mobile-toggle { display: block; position: fixed; top: 15px; left: 15px; z-index: 1100; }
+            .admin-topbar { padding-left: 60px !important; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Mobile Toggle -->
+    <button class="btn btn-dark mobile-toggle d-lg-none" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <div class="admin-sidebar" id="sidebar">
+        <div class="px-4 py-3 border-bottom border-secondary mb-3">
+            <h5 class="text-white mb-0">MLM Admin</h5>
+        </div>
+        <nav>
+            <a href="/admin/dashboard" class="admin-nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
+            <a href="/admin/users" class="admin-nav-link"><i class="bi bi-people"></i> Users</a>
+            <a href="/admin/deposits" class="admin-nav-link"><i class="bi bi-plus-circle"></i> Deposits</a>
+            <a href="/admin/withdrawals" class="admin-nav-link"><i class="bi bi-cash-stack"></i> Withdrawals</a>
+            <a href="/admin/transactions" class="admin-nav-link"><i class="bi bi-journal-text"></i> Transactions</a>
+            <a href="/admin/team-income" class="admin-nav-link"><i class="bi bi-diagram-3"></i> Team Income</a>
+            <a href="/admin/roi-codes" class="admin-nav-link"><i class="bi bi-key"></i> ROI Codes</a>
+            <a href="/admin/settings" class="admin-nav-link"><i class="bi bi-gear"></i> Settings</a>
+            <hr class="text-secondary mx-3">
+            <a href="/admin/login" class="admin-nav-link"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </nav>
+    </div>
+
+    <div class="admin-content">
+        <div class="admin-topbar bg-white px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 text-muted">Management Console</h5>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-primary px-3">Admin Panel</span>
+            </div>
+        </div>
+        <main class="p-4">
+            <%- body %>
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

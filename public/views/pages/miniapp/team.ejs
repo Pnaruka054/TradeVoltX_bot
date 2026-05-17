@@ -1,0 +1,131 @@
+<!-- Page Loader -->
+<div id="page-loader">
+    <div class="loader-ring"></div>
+    <div class="loader-text">Loading...</div>
+</div>
+
+<div class="animate-in">
+    <!-- Page Title -->
+    <div class="page-title">
+        <i class="bi bi-diagram-3-fill"></i>
+        <span class="title-gradient">Team Report</span>
+    </div>
+
+    <!-- Stats Cards -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;" class="animate-in">
+        <div class="glass-card text-center" style="padding:18px 12px; margin-bottom:0;">
+            <div style="font-size:2rem; font-weight:700; color:#e8f5ee; line-height:1.1;">
+                <%= formatK(totalTeamMembers) %>
+            </div>
+            <div style="font-size:0.68rem; color:#6dab88; text-transform:uppercase; letter-spacing:0.08em; margin-top:7px; font-weight:600;">
+                👥 Total Members
+            </div>
+        </div>
+        <div class="glass-card text-center border-success" style="padding:18px 12px; margin-bottom:0;">
+            <div style="font-size:2rem; font-weight:700; color:#34d373; line-height:1.1;">
+                <%= formatK(totalTeamEarnings) %> USDT
+            </div>
+            <div style="font-size:0.68rem; color:#4dac78; text-transform:uppercase; letter-spacing:0.08em; margin-top:7px; font-weight:600;">
+                💰 Team Earnings
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Filter -->
+    <div class="glass-card animate-in" style="padding: 12px 14px !important; margin-bottom: 18px;">
+        <form id="filterForm" method="GET" style="margin:0; display:flex; align-items:center; gap:12px;">
+            <input type="hidden" name="userId" value="<%= user.userID %>">
+            <i class="bi bi-calendar3" style="color:#d4af37; flex-shrink:0; font-size:1rem;"></i>
+            <div class="period-select-wrapper">
+                <select name="period" class="period-select" onchange="showLoader('Loading team data...'); this.form.submit()">
+                    <option value="all" <%= currentPeriod === 'all' ? 'selected' : '' %>>📅 All Time</option>
+                    <% availablePeriods.forEach(p => { %>
+                        <option value="<%= p.value %>" <%= currentPeriod === p.value ? 'selected' : '' %>><%= p.label %></option>
+                    <% }) %>
+                </select>
+                <i class="bi bi-chevron-down period-chevron"></i>
+            </div>
+        </form>
+    </div>
+
+    <!-- Level Tabs — counts from SSR data -->
+    <div class="level-tabs animate-in">
+        <% for (let i = 1; i <= 3; i++) { %>
+            <button class="level-tab-btn <%= i === 1 ? 'active' : '' %>"
+                    id="tab-lvl-<%= i %>"
+                    onclick="switchLevel(<%= i %>)">
+                Lvl <%= i %>
+                <span class="level-count-badge" id="badge-<%= i %>"><%= levelMembers[i].length %></span>
+            </button>
+        <% } %>
+    </div>
+
+    <!-- Level Content Panels — all pre-rendered by server -->
+    <% for (let i = 1; i <= 3; i++) { %>
+        <div id="panel-<%= i %>" style="display:<%= i === 1 ? 'block' : 'none' %>;" class="animate-in">
+            <% if (levelMembers[i].length === 0) { %>
+                <div class="empty-state">
+                    <i class="bi bi-person-plus"></i>
+                    <p>No members at Level <%= i %></p>
+                    <% if (i === 1) { %><small>Share your referral link to grow your team!</small><% } %>
+                </div>
+            <% } else { %>
+                <% levelMembers[i].forEach(m => { %>
+                    <div class="member-card">
+                        <div class="member-avatar">
+                            <%= (m.firstName || '?').charAt(0).toUpperCase() %>
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:600; font-size:0.92rem; color:#e8f5ee;">
+                                <%= m.firstName %>
+                                <span style="color:#4d7a60; font-size:0.78rem; font-weight:400;"> (<%= m.userID %>)</span>
+                            </div>
+                            <div style="font-size:0.74rem; color:#4d7a60; margin-top:3px;">
+                                <i class="bi bi-calendar3"></i>
+                                <%= m.createdAt instanceof Date ? m.createdAt.toLocaleDateString('en-IN') : new Date(m.createdAt).toLocaleDateString('en-IN') %>
+                            </div>
+                        </div>
+                        <div style="text-align:right; flex-shrink:0;">
+                            <% 
+                                const activePlans = (m.activePlans || []).filter(p => p.isActive);
+                                const totalAmt = activePlans.reduce((acc, p) => acc + p.planAmount, 0);
+                            %>
+                            <% if (activePlans.length > 0) { %>
+                                <span class="badge-active-pill">Active</span>
+                                <div style="font-size:0.85rem; color:#d4af37; font-weight:700; margin-top:5px;"><%= formatK(totalAmt) %> USDT</div>
+                            <% } else { %>
+                                <span class="badge-inactive-pill">Inactive</span>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } %>
+        </div>
+    <% } %>
+</div>
+
+<script>
+let activeLevel = 1;
+
+function showLoader(msg) {
+    const loader = document.getElementById('page-loader');
+    const text = loader.querySelector('.loader-text');
+    if (text && msg) text.textContent = msg;
+    loader.classList.add('show');
+}
+
+function switchLevel(level) {
+    // Immediate visual tab switch — no loading needed (all data is pre-rendered)
+    document.getElementById('panel-' + activeLevel).style.display = 'none';
+    document.getElementById('tab-lvl-' + activeLevel).classList.remove('active');
+
+    activeLevel = level;
+    document.getElementById('panel-' + level).style.display = 'block';
+    document.getElementById('tab-lvl-' + level).classList.add('active');
+}
+
+// Auto-hide loader on back navigation
+window.addEventListener('pageshow', function() {
+    document.getElementById('page-loader').classList.remove('show');
+});
+</script>

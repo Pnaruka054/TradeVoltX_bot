@@ -1,0 +1,135 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>All Transactions</h2>
+    <div class="text-muted small">Showing <%= transactions.length %> of <%= totalRecords %> Transactions</div>
+</div>
+
+<div class="stat-card mb-4">
+    <form action="/admin/transactions" method="GET" class="row g-3 p-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by ID, TG or Description..." value="<%= search %>">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select name="type" class="form-select">
+                <option value="all" <%= type === 'all' ? 'selected' : '' %>>All Types</option>
+                <option value="deposit" <%= type === 'deposit' ? 'selected' : '' %>>Deposit</option>
+                <option value="withdrawal" <%= type === 'withdrawal' ? 'selected' : '' %>>Withdrawal</option>
+                <option value="daily_income" <%= type === 'daily_income' ? 'selected' : '' %>>Daily Income</option>
+                <option value="team_income" <%= type === 'team_income' ? 'selected' : '' %>>Team Income</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="limit" class="form-select">
+                <option value="10" <%= limit == 10 ? 'selected' : '' %>>10 per page</option>
+                <option value="30" <%= limit == 30 ? 'selected' : '' %>>30 per page</option>
+                <option value="50" <%= limit == 50 ? 'selected' : '' %>>50 per page</option>
+                <option value="100" <%= limit == 100 ? 'selected' : '' %>>100 per page</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Apply</button>
+        </div>
+        <div class="col-md-2">
+            <a href="/admin/transactions" class="btn btn-outline-secondary w-100">Clear</a>
+        </div>
+    </form>
+</div>
+
+<div class="stat-card">
+    <div class="table-responsive">
+        <table class="table align-middle no-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>User ID</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (transactions.length === 0) { %>
+                    <tr><td colspan="6" class="text-center py-4">No transactions found.</td></tr>
+                <% } %>
+                <% transactions.forEach(tx => { %>
+                    <tr>
+                        <td class="small"><%= tx.createdAt.toLocaleString('en-IN') %></td>
+                        <td><a href="/admin/users/<%= tx.userId %>" class="fw-bold"><%= tx.userId %></a></td>
+                        <td>
+                            <span class="badge bg-light text-dark border text-uppercase"><%= tx.type.replace('_', ' ') %></span>
+                            <% if (tx.paymentMethod) { %>
+                                <span class="badge bg-info text-dark smallest d-block mt-1"><%= tx.paymentMethod %></span>
+                            <% } %>
+                        </td>
+                        <td class="text-muted small">
+                            <%= tx.description %>
+                            <% if (tx.paymentScreenshot) { %>
+                                <div class="mt-2">
+                                    <a href="#" onclick="showScreenshot('<%= tx.paymentScreenshot %>')" class="btn btn-xs btn-outline-primary py-0 px-1 smallest">View Proof</a>
+                                </div>
+                            <% } %>
+                        </td>
+                        <td class="<%= (tx.type === 'withdrawal') ? 'text-danger' : 'text-success' %> fw-bold">
+                            <%= (tx.type === 'withdrawal') ? '-' : '+' %><%= tx.amount.toFixed(2) %> USDT
+                        </td>
+                        <td><span class="badge bg-<%= tx.status === 'completed' || tx.status === 'approved' ? 'success' : (tx.status === 'pending' ? 'warning' : 'danger') %>"><%= tx.status %></span></td>
+                    </tr>
+                <% }) %>
+                </tbody>
+                </table>
+                </div>
+
+                <!-- Modal for Screenshot -->
+                <div class="modal fade" id="screenshotModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Payment Proof</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="text-muted small mb-2">Note: Screenshots are stored on Telegram. If not loading, try viewing in bot.</p>
+                    <img id="screenshotImg" src="" class="img-fluid rounded border" alt="Screenshot">
+                </div>
+                </div>
+                </div>
+                </div>
+
+                <% if (totalPages > 1) { %>
+                <div class="d-flex justify-content-center p-3 border-top">
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                                <a class="page-link" href="/admin/transactions?page=<%= page - 1 %>&limit=<%= limit %>&search=<%= search %>&type=<%= type %>">Previous</a>
+                            </li>
+                            <% for(let i=1; i<=totalPages; i++) { %>
+                                <li class="page-item <%= page === i ? 'active' : '' %>">
+                                    <a class="page-link" href="/admin/transactions?page=<%= i %>&limit=<%= limit %>&search=<%= search %>&type=<%= type %>"><%= i %></a>
+                                </li>
+                            <% } %>
+                            <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                                <a class="page-link" href="/admin/transactions?page=<%= page + 1 %>&limit=<%= limit %>&search=<%= search %>&type=<%= type %>">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                <% } %>
+</div>
+
+<script>
+function showScreenshot(fileId) {
+    // We can't directly show Telegram file_id in browser without a proxy or bot helper
+    // For now, we just tell admin to check in bot or we could provide a link if we had a proxy
+    alert("Payment Screenshot File ID: " + fileId + "\nPlease check this proof in the Telegram Bot backend or logs if needed. Direct browser viewing of Telegram file IDs requires a proxy.");
+}
+</script>
+
+<style>
+    .no-hover tr:hover {
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }
+</style>

@@ -1,0 +1,63 @@
+<div class="leaderboard-container">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-white mb-0">🏆 Leaderboard</h2>
+        <p class="text-light-50">Top Earners Reward</p>
+    </div>
+
+    <% if (user) { %>
+    <div class="card bg-primary text-white border-0 shadow-sm mb-4">
+        <div class="card-body p-3 d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <div class="avatar-circle bg-white text-primary fw-bold">You</div>
+                <div>
+                    <h6 class="mb-0 fw-bold"><%= user.firstName %></h6>
+                    <small class="opacity-75">ID: <%= user.userID %></small>
+                </div>
+            </div>
+            <div class="text-end">
+                <h6 class="mb-0 fw-bold"><%= formatK(user.totalEarned) %> USDT</h6>
+                <small class="opacity-75">Total Earned</small>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="list-group list-group-flush">
+            <% topEarners.forEach((earner, index) => { %>
+            <div class="list-group-item p-3 border-0 <%= index < 3 ? 'bg-light-yellow' : '' %>">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rank-badge <%= index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '' %>">
+                            <%= index + 1 %>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-semibold"><%= earner.firstName %></h6>
+                            <small class="text-muted">ID: <%= earner.userID %></small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <h6 class="mb-0 fw-bold text-primary"><%= formatK(earner.totalEarned) %> USDT</h6>
+                    </div>
+                </div>
+            </div>
+            <% }) %>
+            
+            <% if (topEarners.length === 0) { %>
+            <div class="p-5 text-center text-muted">
+                <i class="bi bi-trophy fs-1 d-block mb-3"></i>
+                No earners yet.
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-light-yellow { background-color: #fffdf0; }
+    .rank-badge { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #f8f9fa; font-size: 0.9rem; }
+    .rank-1 { background: #ffd700; color: #fff; }
+    .rank-2 { background: #c0c0c0; color: #fff; }
+    .rank-3 { background: #cd7f32; color: #fff; }
+    .avatar-circle { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+</style>

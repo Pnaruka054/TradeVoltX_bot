@@ -1,0 +1,123 @@
+<!-- Page Loader -->
+<div id="page-loader">
+    <div class="loader-ring"></div>
+    <div class="loader-text">Loading...</div>
+</div>
+
+<div class="animate-in">
+    <!-- Page Title -->
+    <div class="page-title">
+        <i class="bi bi-receipt-cutoff"></i>
+        <span class="title-gradient">History</span>
+    </div>
+
+    <!-- Summary Bar -->
+    <div class="summary-bar animate-in">
+        <div>
+            <div class="summary-label">💰 Credit</div>
+            <div class="summary-value" style="color:#34d373;">+<%= formatK(totalCredit) %> USDT</div>
+        </div>
+        <div class="summary-divider"></div>
+        <div>
+            <div class="summary-label">💸 Debit</div>
+            <div class="summary-value" style="color:#f87171;">-<%= formatK(totalDebit) %> USDT</div>
+        </div>
+        <div class="summary-divider"></div>
+        <div>
+            <div class="summary-label">📊 Net</div>
+            <div class="summary-value" style="color:<%= net >= 0 ? '#34d373' : '#f87171' %>;">
+                <%= net >= 0 ? '+' : '-' %><%= formatK(Math.abs(net)) %> USDT
+            </div>
+        </div>
+    </div>
+
+    <!-- Type Filter Chips — show loader on click -->
+    <div class="animate-in" style="display:flex; gap:0; overflow-x:auto; padding-bottom:12px; margin-bottom:4px;">
+        <a href="?userId=<%= user.userID %>&type=all&period=<%= currentPeriod %>" class="filter-btn text-decoration-none <%= currentType === 'all' ? 'active' : '' %>" onclick="showLoader()">All</a>
+        <a href="?userId=<%= user.userID %>&type=daily_income&period=<%= currentPeriod %>" class="filter-btn text-decoration-none <%= currentType === 'daily_income' ? 'active' : '' %>" onclick="showLoader()">💰 Daily</a>
+        <a href="?userId=<%= user.userID %>&type=team_income&period=<%= currentPeriod %>" class="filter-btn text-decoration-none <%= currentType === 'team_income' ? 'active' : '' %>" onclick="showLoader()">🤝 Team</a>
+        <a href="?userId=<%= user.userID %>&type=withdrawal&period=<%= currentPeriod %>" class="filter-btn text-decoration-none <%= currentType === 'withdrawal' ? 'active' : '' %>" onclick="showLoader()">💸 Withdraw</a>
+    </div>
+
+    <!-- Period Filter -->
+    <div class="glass-card animate-in" style="padding: 12px 14px !important; margin-bottom: 18px;">
+        <form id="filterForm" method="GET" style="margin:0; display:flex; align-items:center; gap:12px;">
+            <input type="hidden" name="userId" value="<%= user.userID %>">
+            <input type="hidden" name="type" value="<%= currentType %>">
+            <i class="bi bi-calendar3" style="color:#d4af37; flex-shrink:0; font-size:1rem;"></i>
+            <div class="period-select-wrapper">
+                <select name="period" class="period-select" onchange="showLoader(); this.form.submit()">
+                    <option value="all" <%= currentPeriod === 'all' ? 'selected' : '' %>>📅 All Time</option>
+                    <% availablePeriods.forEach(p => { %>
+                        <option value="<%= p.value %>" <%= currentPeriod === p.value ? 'selected' : '' %>><%= p.label %></option>
+                    <% }) %>
+                </select>
+                <i class="bi bi-chevron-down period-chevron"></i>
+            </div>
+        </form>
+    </div>
+
+    <!-- Transaction List -->
+    <% if (transactions.length === 0) { %>
+        <div class="empty-state animate-in">
+            <i class="bi bi-inbox"></i>
+            <p>No transactions found</p>
+            <small>Try a different filter or time period</small>
+        </div>
+    <% } %>
+
+    <% transactions.forEach((tx, idx) => {
+        let iconClass = 'bi-circle';
+        let wrapClass = 'tx-icon-income';
+        let sign = '+';
+        let typeLabel = tx.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+        if (tx.type === 'deposit')        { iconClass = 'bi-wallet2';                wrapClass = 'tx-icon-deposit'; }
+        if (tx.type === 'withdrawal')     { iconClass = 'bi-cash-stack';              wrapClass = 'tx-icon-debit';   sign = '-'; }
+        if (tx.type === 'daily_income')   { iconClass = 'bi-graph-up-arrow';         wrapClass = 'tx-icon-income'; }
+        if (tx.type === 'team_income')    { iconClass = 'bi-people-fill';             wrapClass = 'tx-icon-team'; }
+
+        const isDebit = sign === '-';
+        const amtColor = isDebit ? '#f87171' : '#34d373';
+        const statusKey = (tx.status || 'completed').toLowerCase();
+    %>
+        <div class="tx-item animate-in" style="animation-delay:<%= Math.min(idx * 0.04, 0.4) %>s">
+            <div class="tx-icon-wrap <%= wrapClass %>">
+                <i class="bi <%= iconClass %>"></i>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <div class="tx-label"><%= typeLabel %></div>
+                <div class="tx-desc" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= tx.description || '—' %></div>
+                <div class="tx-date">
+                    <%= tx.createdAt instanceof Date
+                        ? tx.createdAt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) + ', ' + tx.createdAt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })
+                        : tx.createdAt %>
+                </div>
+            </div>
+            <div style="text-align:right; flex-shrink:0; min-width:76px;">
+                <div class="tx-amount" style="color:<%= amtColor %>;"><%= sign %><%= formatK(tx.amount) %> USDT</div>
+                <span class="tx-status status-<%= statusKey %>"><%= statusKey.charAt(0).toUpperCase() + statusKey.slice(1) %></span>
+            </div>
+        </div>
+    <% }) %>
+
+    <% if (transactions.length >= 100) { %>
+        <div style="text-align:center; padding:16px; font-size:0.8rem; color:#4d7a60;">
+            <i class="bi bi-info-circle me-1"></i> Showing latest 100 transactions
+        </div>
+    <% } %>
+</div>
+
+<script>
+function showLoader(msg) {
+    const loader = document.getElementById('page-loader');
+    const text = loader.querySelector('.loader-text');
+    if (text && msg) text.textContent = msg;
+    loader.classList.add('show');
+}
+
+// Auto-hide loader when page finishes loading (back-nav case)
+window.addEventListener('pageshow', function() {
+    document.getElementById('page-loader').classList.remove('show');
+});
+</script>

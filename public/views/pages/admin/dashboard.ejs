@@ -1,0 +1,87 @@
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card border-bottom border-4 border-primary">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value"><%= stats.totalUsers %></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card border-bottom border-4 border-success">
+            <div class="stat-label">Active Users</div>
+            <div class="stat-value"><%= stats.activeUsers %></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card border-bottom border-4 border-info">
+            <div class="stat-label">Total Deposited</div>
+            <div class="stat-value"><%= stats.totalDeposited.toLocaleString('en-IN') %> USDT</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card border-bottom border-4 border-warning">
+            <div class="stat-label">Pending Withdrawals</div>
+            <div class="stat-value"><%= stats.pendingWithdrawals %></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card border-bottom border-4 border-info">
+            <div class="stat-label">Pending Deposits</div>
+            <div class="stat-value"><%= stats.pendingDeposits %></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card border-bottom border-4 border-danger">
+            <div class="stat-label">Total Withdrawn</div>
+            <div class="stat-value"><%= stats.totalWithdrawn.toLocaleString('en-IN') %> USDT</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card border-bottom border-4 border-primary">
+            <div class="stat-label">New Users Today</div>
+            <div class="stat-value"><%= stats.newUsersToday %></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card border-bottom border-4 border-success">
+            <div class="stat-label">Today's Income Shared</div>
+            <div class="stat-value"><%= stats.totalTodayIncome.toLocaleString('en-IN') %> USDT</div>
+        </div>
+    </div>
+</div>
+
+<h3 class="mb-3">Recent Activity</h3>
+<div class="stat-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>User ID</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (recentTransactions.length === 0) { %>
+                    <tr><td colspan="5" class="text-center py-4">No recent activity</td></tr>
+                <% } %>
+                <% recentTransactions.forEach(tx => { %>
+                <tr>
+                    <td><%= tx.createdAt.toLocaleString('en-IN') %></td>
+                    <td><a href="/admin/users/<%= tx.userId %>" class="text-decoration-none fw-bold"><%= tx.userId %></a></td>
+                    <td><span class="text-uppercase"><%= tx.type.replace('_', ' ') %></span></td>
+                    <td class="<%= (tx.type === 'withdrawal') ? 'text-danger' : 'text-success' %> fw-bold">
+                        <%= tx.amount.toFixed(2) %> USDT
+                    </td>
+                    <td>
+                        <span class="badge rounded-pill bg-<%= tx.status === 'completed' || tx.status === 'approved' ? 'success' : (tx.status === 'pending' ? 'warning' : 'danger') %>">
+                            <%= tx.status %>
+                        </span>
+                    </td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>

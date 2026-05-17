@@ -1,0 +1,215 @@
+<div class="payment-container animate-in">
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+        <div class="card-header bg-dark text-white text-center py-4">
+            <h4 class="mb-0 fw-bold">Complete Payment</h4>
+            <p class="mb-0 opacity-75 small">USDT (BEP20) Deposit</p>
+        </div>
+        <div class="card-body p-4 text-center">
+            <div class="amount-display mb-4">
+                <h1 class="fw-bold mb-0 text-primary">
+                    <%= amount %> USDT
+                </h1>
+                <p class="text-muted small">Payable Amount</p>
+            </div>
+
+            <div class="qr-wrapper mb-4 p-3 bg-white rounded shadow-sm d-inline-block mx-auto">
+                <% if (qrCode) { %>
+                    <img src="<%= qrCode %>" class="img-fluid" style="max-width: 250px;" alt="Payment QR">
+                <% } else { %>
+                    <div class="p-5 bg-light text-muted small">QR Code not available</div>
+                <% } %>
+            </div>
+
+            <div class="details-box text-start p-3 bg-light rounded-3 mb-4">
+                <div class="mb-2">
+                    <label class="text-muted smallest d-block">USDT Address (BEP20)</label>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <code id="usdtAddress" class="fw-bold text-break me-2"><%= usdtAddress %></code>
+                        <button class="btn btn-sm btn-outline-primary py-0" onclick="copyToClipboard('usdtAddress')">Copy</button>
+                    </div>
+                </div>
+                <div class="small text-danger fw-bold">Network: BEP20 Only</div>
+            </div>
+
+            <div class="verification-section text-start mb-4">
+                <label class="text-muted smallest d-block mb-1">
+                    Transaction Hash / ID
+                </label>
+                <input type="text" id="txnId" class="form-control form-control-lg rounded-3" 
+                       placeholder="Enter transaction hash"
+                       oninput="this.value = this.value.toUpperCase()">
+                <p class="smallest text-muted mt-1">
+                    <i class="bi bi-info-circle"></i> After payment, enter your TxID to verify.
+                </p>
+            </div>
+
+            <div class="alert alert-warning smallest text-start py-2">
+                <i class="bi bi-exclamation-triangle-fill"></i> Take a screenshot of the success page for backup.
+            </div>
+        </div>
+    </div>
+
+    <button id="submitBtn" onclick="submitDeposit()" class="btn btn-primary w-100 py-3 rounded-pill shadow-sm fw-bold">
+        Verify & Submit
+    </button>
+</div>
+
+<!-- Custom Success Modal -->
+<div id="successModal" class="custom-modal" style="display: none;">
+    <div class="custom-modal-content animate-in">
+        <div class="text-center p-4">
+            <div class="success-icon mb-4">
+                <i class="bi bi-check-circle-fill" style="font-size: 4rem; color: #d4af37; filter: drop-shadow(0 0 10px rgba(212,175,55,0.4));"></i>
+            </div>
+            <h3 class="fw-bold mb-2" style="color: #d4af37;">Proof Submitted!</h3>
+            <p class="mb-4" style="color: rgba(232, 245, 238, 0.8); font-size: 0.9rem;">
+                Your deposit proof has been received. Admin will verify your payment and activate your plan shortly.
+            </p>
+            <button onclick="closePaymentPage()" class="btn-premium-gold w-100 py-3 rounded-pill fw-bold">
+                Got it, Thank you!
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .amount-display { border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 1rem; }
+    .qr-wrapper { border: 1px solid rgba(255,255,255,0.1); background: white; padding: 10px !important; border-radius: 16px; }
+    .smallest { font-size: 0.75rem; }
+
+    /* Custom Modal Styles - Dark Theme */
+    .custom-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .custom-modal-content {
+        background: #121214;
+        border: 1px solid rgba(212,175,55,0.3);
+        border-radius: 28px;
+        max-width: 380px;
+        width: 100%;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    }
+    .btn-premium-gold {
+        background: linear-gradient(135deg, #d4af37, #b8952a);
+        color: #0a1f0f;
+        border: none;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(212,175,55,0.3);
+    }
+    .btn-premium-gold:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(212,175,55,0.4);
+    }
+    .animate-in {
+        animation: modalFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalFadeIn {
+        from { opacity: 0; transform: scale(0.9) translateY(30px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+</style>
+
+<script>
+const amount = '<%= amount %>';
+const method = 'USDT';
+const userId = '<%= user.userID %>';
+
+function closePaymentPage() {
+    // Attempt to close the window/tab
+    window.close();
+    
+    // Fallback for browsers that block window.close()
+    setTimeout(() => {
+        // If still open, try to use Telegram WebApp close if available
+        if (window.Telegram && Telegram.WebApp && typeof Telegram.WebApp.close === 'function') {
+            Telegram.WebApp.close();
+        } else {
+            // Last resort: Update the UI to tell them to close it manually
+            const modalContent = document.querySelector('.custom-modal-content .text-center');
+            if (modalContent) {
+                modalContent.innerHTML = `
+                    <div class="success-icon mb-4">
+                        <i class="bi bi-info-circle-fill" style="font-size: 4rem; color: #d4af37;"></i>
+                    </div>
+                    <h3 class="fw-bold mb-2" style="color: #d4af37;">All Set!</h3>
+                    <p class="mb-4" style="color: rgba(232, 245, 238, 0.8); font-size: 0.9rem;">
+                        You can now safely close this browser tab and return to the Telegram bot.
+                    </p>
+                    <div class="smallest text-muted">Verification is in progress.</div>
+                `;
+            }
+        }
+    }, 300);
+}
+
+function copyToClipboard(elementId) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        if (window.Telegram && Telegram.WebApp && typeof Telegram.WebApp.showPopup === 'function') {
+            Telegram.WebApp.showPopup({
+                title: 'Copied!',
+                message: 'Details copied to clipboard',
+                buttons: [{ type: 'ok' }]
+            });
+        } else {
+            alert('Details copied to clipboard');
+        }
+    });
+}
+
+async function submitDeposit() {
+    const txnId = document.getElementById('txnId').value.trim();
+    if (!txnId) {
+        alert('Please enter your Transaction ID / Hash');
+        return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = 'Submitting...';
+
+    try {
+        const response = await fetch('/open-app/api/deposit/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, amount, method, txnId })
+        });
+        
+        let result;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            result = await response.json();
+        } else {
+            const text = await response.text();
+            console.error("Non-JSON response:", text);
+            throw new Error(`Server returned non-JSON response (${response.status})`);
+        }
+        
+        if (result.success) {
+            // Show Custom Success Modal
+            document.getElementById('successModal').style.display = 'flex';
+        } else {
+            alert(result.error || 'Submission failed. Please try again.');
+            btn.disabled = false;
+            btn.innerText = 'Verify & Submit';
+        }
+    } catch (err) {
+        console.error("Submission error:", err);
+        alert('An error occurred: ' + err.message);
+        btn.disabled = false;
+        btn.innerText = 'Verify & Submit';
+    }
+}
+</script>

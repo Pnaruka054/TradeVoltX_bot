@@ -1,0 +1,140 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Deposits</h2>
+    <div class="text-muted small">Showing <%= deposits.length %> of <%= totalRecords %> Records</div>
+</div>
+
+<div class="stat-card mb-4">
+    <form action="/admin/deposits" method="GET" class="row g-3 p-3">
+        <input type="hidden" name="status" value="<%= currentFilter %>">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by User ID or TxID..." value="<%= search %>">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="limit" class="form-select">
+                <option value="10" <%= limit == 10 ? 'selected' : '' %>>10 per page</option>
+                <option value="30" <%= limit == 30 ? 'selected' : '' %>>30 per page</option>
+                <option value="50" <%= limit == 50 ? 'selected' : '' %>>50 per page</option>
+                <option value="100" <%= limit == 100 ? 'selected' : '' %>>100 per page</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Apply</button>
+        </div>
+        <div class="col-md-2">
+            <a href="/admin/deposits?status=<%= currentFilter %>" class="btn btn-outline-secondary w-100">Clear</a>
+        </div>
+    </form>
+</div>
+
+<ul class="nav nav-pills mb-4 bg-white p-2 rounded shadow-sm d-inline-flex">
+    <li class="nav-item">
+        <a class="nav-link <%= currentFilter === 'all' ? 'active' : '' %>" href="/admin/deposits?status=all&limit=<%= limit %>&search=<%= search %>">All</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= currentFilter === 'pending' ? 'active' : '' %>" href="/admin/deposits?status=pending&limit=<%= limit %>&search=<%= search %>">Pending</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= currentFilter === 'completed' ? 'active' : '' %>" href="/admin/deposits?status=completed&limit=<%= limit %>&search=<%= search %>">Completed</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <%= currentFilter === 'rejected' ? 'active' : '' %>" href="/admin/deposits?status=rejected&limit=<%= limit %>&search=<%= search %>">Rejected</a>
+    </li>
+</ul>
+
+<div class="stat-card">
+    <div class="table-responsive">
+        <table class="table align-middle no-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>User ID</th>
+                    <th>Amount</th>
+                    <th>Details / TxID</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (deposits.length === 0) { %>
+                    <tr><td colspan="6" class="text-center py-4 text-muted">No deposits found.</td></tr>
+                <% } %>
+                <% deposits.forEach(d => { %>
+                    <tr>
+                        <td class="small"><%= d.createdAt.toLocaleString('en-IN') %></td>
+                        <td><a href="/admin/users/<%= d.userId %>" class="fw-bold"><%= d.userId %></a></td>
+                        <td class="fw-bold text-success"><%= d.amount.toFixed(2) %> USDT</td>
+                        <td class="small">
+                            <span class="badge bg-info text-dark mb-1"><%= d.paymentMethod %></span><br>
+                            <strong>ID:</strong> <code><%= d.txnId %></code>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill bg-<%= d.status === 'completed' ? 'success' : (d.status === 'pending' ? 'warning' : 'danger') %>">
+                                <%= d.status %>
+                            </span>
+                            <% if (d.rejectionReason) { %>
+                                <div class="small text-danger mt-1">Reason: <%= d.rejectionReason %></div>
+                            <% } %>
+                        </td>
+                        <td>
+                            <% if (d.status === 'pending') { %>
+                                <div class="d-flex flex-column gap-2">
+                                    <form action="/admin/deposits/<%= d._id %>/approve" method="POST">
+                                        <button class="btn btn-sm btn-success w-100" onclick="return confirm('Approve deposit and activate plan?')">Approve</button>
+                                    </form>
+                                    <button class="btn btn-sm btn-outline-danger w-100" onclick="rejectDeposit('<%= d._id %>')">Reject</button>
+                                </div>
+                            <% } else { %>
+                                <span class="text-muted small">No actions</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <% if (totalPages > 1) { %>
+        <div class="d-flex justify-content-center p-3 border-top">
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                        <a class="page-link" href="/admin/deposits?page=<%= page - 1 %>&limit=<%= limit %>&search=<%= search %>&status=<%= currentFilter %>">Previous</a>
+                    </li>
+                    <% for(let i=1; i<=totalPages; i++) { %>
+                        <li class="page-item <%= page === i ? 'active' : '' %>">
+                            <a class="page-link" href="/admin/deposits?page=<%= i %>&limit=<%= limit %>&search=<%= search %>&status=<%= currentFilter %>"><%= i %></a>
+                        </li>
+                    <% } %>
+                    <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                        <a class="page-link" href="/admin/deposits?page=<%= page + 1 %>&limit=<%= limit %>&search=<%= search %>&status=<%= currentFilter %>">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    <% } %>
+</div>
+
+<form id="rejectForm" method="POST" style="display: none;">
+    <input type="hidden" name="reason" id="rejectReason">
+</form>
+
+<script>
+function rejectDeposit(id) {
+    const reason = prompt("Enter reason for rejection:");
+    if (reason) {
+        document.getElementById('rejectReason').value = reason;
+        document.getElementById('rejectForm').action = `/admin/deposits/${id}/reject`;
+        document.getElementById('rejectForm').submit();
+    }
+}
+</script>
+
+<style>
+    .no-hover tr:hover {
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }
+</style>
