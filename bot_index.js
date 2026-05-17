@@ -235,7 +235,7 @@ module.exports = (bot) => {
         if (!user) return;
 
         const refLink = `https://t.me/${process.env.BOT_USERNAME_PROJECT}?start=${user.userID}`;
-        const msg = `🔗 <b>Your Referral Link:</b>\n${refLink}\n\n📋 <b>Your Unique ID:</b> <code>${user.userID}</code>\n\nShare this link with friends and earn team income when they buy a plan!\n\nLevel 1: 10% of Plan Amount\nLevel 2: 3% of Plan Amount\nLevel 3: 2% of Plan Amount`;
+        const msg = `🔗 <b>Your Referral Link:</b>\n<code>${refLink}</code>\n\n📋 <b>Your Unique ID:</b> <code>${user.userID}</code>\n\nShare this link with friends and earn team income when they buy a plan!\n\nLevel 1: 10% of Plan Amount\nLevel 2: 3% of Plan Amount\nLevel 3: 2% of Plan Amount`;
         ctx.reply(msg, { parse_mode: 'HTML', disable_web_page_preview: true });
     });
 
@@ -289,9 +289,9 @@ module.exports = (bot) => {
         let totalDaily = 0, totalTeam = 0, totalWithdrawn = 0;
         
         txs.forEach(t => {
-            if (t.type === 'daily_income') totalDaily += t.amount;
-            if (t.type === 'team_income') totalTeam += t.amount;
-            if (t.type === 'withdrawal') totalWithdrawn += t.amount;
+            if (t.type === 'daily_income') totalDaily = parseFloat((totalDaily + t.amount).toFixed(2));
+            if (t.type === 'team_income') totalTeam = parseFloat((totalTeam + t.amount).toFixed(2));
+            if (t.type === 'withdrawal') totalWithdrawn = parseFloat((totalWithdrawn + t.amount).toFixed(2));
         });
 
         const totalActiveAmount = user.activePlans.filter(p => p.isActive).reduce((acc, p) => acc + p.planAmount, 0);
@@ -495,7 +495,7 @@ module.exports = (bot) => {
                 telegramId: user.telegramId,
                 type: 'daily_income',
                 amount: totalClaimAmount,
-                description: `Manual ROI Claim (Code: ${inputCode}) - 50% Daily Share`,
+                description: `Trade Income Claimed (Code: ${inputCode})`,
                 status: 'completed'
             });
 

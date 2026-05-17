@@ -1,215 +1,287 @@
-<div class="payment-container animate-in">
-    <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
-        <div class="card-header bg-dark text-white text-center py-4">
-            <h4 class="mb-0 fw-bold">Complete Payment</h4>
-            <p class="mb-0 opacity-75 small">USDT (BEP20) Deposit</p>
-        </div>
-        <div class="card-body p-4 text-center">
-            <div class="amount-display mb-4">
-                <h1 class="fw-bold mb-0 text-primary">
-                    <%= amount %> USDT
-                </h1>
-                <p class="text-muted small">Payable Amount</p>
-            </div>
-
-            <div class="qr-wrapper mb-4 p-3 bg-white rounded shadow-sm d-inline-block mx-auto">
-                <% if (qrCode) { %>
-                    <img src="<%= qrCode %>" class="img-fluid" style="max-width: 250px;" alt="Payment QR">
-                <% } else { %>
-                    <div class="p-5 bg-light text-muted small">QR Code not available</div>
-                <% } %>
-            </div>
-
-            <div class="details-box text-start p-3 bg-light rounded-3 mb-4">
-                <div class="mb-2">
-                    <label class="text-muted smallest d-block">USDT Address (BEP20)</label>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <code id="usdtAddress" class="fw-bold text-break me-2"><%= usdtAddress %></code>
-                        <button class="btn btn-sm btn-outline-primary py-0" onclick="copyToClipboard('usdtAddress')">Copy</button>
-                    </div>
-                </div>
-                <div class="small text-danger fw-bold">Network: BEP20 Only</div>
-            </div>
-
-            <div class="verification-section text-start mb-4">
-                <label class="text-muted smallest d-block mb-1">
-                    Transaction Hash / ID
-                </label>
-                <input type="text" id="txnId" class="form-control form-control-lg rounded-3" 
-                       placeholder="Enter transaction hash"
-                       oninput="this.value = this.value.toUpperCase()">
-                <p class="smallest text-muted mt-1">
-                    <i class="bi bi-info-circle"></i> After payment, enter your TxID to verify.
-                </p>
-            </div>
-
-            <div class="alert alert-warning smallest text-start py-2">
-                <i class="bi bi-exclamation-triangle-fill"></i> Take a screenshot of the success page for backup.
+<div class="payment-flat-view animate-in">
+    <!-- Header -->
+    <div class="flat-header text-center py-3">
+        <h3 class="fw-bold mb-0">Complete Payment</h3>
+        <div class="network-badge-row d-flex justify-content-center align-items-center mt-2">
+            <div class="network-badge">
+                <img src="https://cryptologos.cc/logos/tether-usdt-logo.svg?v=025" width="16" alt="USDT">
+                <span>USDT (BEP20)</span>
             </div>
         </div>
     </div>
 
-    <button id="submitBtn" onclick="submitDeposit()" class="btn btn-primary w-100 py-3 rounded-pill shadow-sm fw-bold">
-        Verify & Submit
-    </button>
+    <div class="payment-content px-3">
+        <!-- Amount Section -->
+        <div class="flat-amount-section text-center mb-3">
+            <span class="label-tiny">PAYABLE AMOUNT</span>
+            <div class="d-flex justify-content-center align-items-center mt-0">
+                <span class="amount-value" id="payableAmount"><%= amount %></span>
+                <span class="currency-label ms-2">USDT</span>
+                <button class="flat-copy-btn ms-2" onclick="copyToClipboard('payableAmount')" title="Copy Amount">
+                    <i class="bi bi-copy"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- QR Section -->
+        <div class="flat-qr-section text-center mb-3">
+            <div class="qr-placeholder">
+                <% if (qrCode) { %>
+                    <img src="<%= qrCode %>" class="img-fluid" style="max-width: 140px;" alt="Payment QR">
+                <% } else { %>
+                    <div class="qr-missing">QR Code Not Set</div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Address Section -->
+        <div class="flat-data-row mb-3">
+            <span class="label-tiny">DEPOSIT ADDRESS</span>
+            <div class="data-display mt-1">
+                <code id="usdtAddress" class="text-break"><%= usdtAddress %></code>
+                <button class="btn-copy-link" onclick="copyToClipboard('usdtAddress')">COPY</button>
+            </div>
+            <div class="network-note mt-2">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>Send only USDT to this address via <b>BNB Smart Chain (BEP20)</b>.</span>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="flat-input-group mb-3">
+            <label class="label-tiny fw-bold">TRANSACTION HASH / TXID</label>
+            <input type="text" id="txnId" class="minimal-input mt-1" 
+                   placeholder="Paste hash here..."
+                   oninput="this.value = this.value.toUpperCase()">
+        </div>
+
+        <button id="submitBtn" onclick="submitDeposit()" class="btn-flat-primary w-100 py-3 mb-4 shadow-sm">
+            VERIFY & SUBMIT
+        </button>
+    </div>
 </div>
 
-<!-- Custom Success Modal -->
-<div id="successModal" class="custom-modal" style="display: none;">
-    <div class="custom-modal-content animate-in">
-        <div class="text-center p-4">
-            <div class="success-icon mb-4">
-                <i class="bi bi-check-circle-fill" style="font-size: 4rem; color: #d4af37; filter: drop-shadow(0 0 10px rgba(212,175,55,0.4));"></i>
-            </div>
-            <h3 class="fw-bold mb-2" style="color: #d4af37;">Proof Submitted!</h3>
-            <p class="mb-4" style="color: rgba(232, 245, 238, 0.8); font-size: 0.9rem;">
-                Your deposit proof has been received. Admin will verify your payment and activate your plan shortly.
-            </p>
-            <button onclick="closePaymentPage()" class="btn-premium-gold w-100 py-3 rounded-pill fw-bold">
-                Got it, Thank you!
-            </button>
-        </div>
+<!-- Simple Success Overly -->
+<div id="successModal" class="flat-overlay" style="display: none;">
+    <div class="flat-modal-body animate-in">
+        <i class="bi bi-check-circle-fill text-success mb-2" style="font-size: 3rem;"></i>
+        <h4 class="fw-bold">Submitted!</h4>
+        <p class="text-muted-alt smallest">Verifying your deposit. Plan active soon.</p>
+        <button onclick="closePaymentPage()" class="btn-flat-primary w-100 mt-2 py-2">OKAY</button>
     </div>
 </div>
 
 <style>
-    .amount-display { border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 1rem; }
-    .qr-wrapper { border: 1px solid rgba(255,255,255,0.1); background: white; padding: 10px !important; border-radius: 16px; }
-    .smallest { font-size: 0.75rem; }
+    :root {
+        --bg-color: #0d0d0f;
+        --text-main: #ffffff;
+        --text-muted: #8e8e93;
+        --accent-blue: #007aff;
+        --soft-bg: #1c1c1e;
+        --warning-gold: #ffd60a;
+        --usdt-green: #26a17b;
+    }
 
-    /* Custom Modal Styles - Dark Theme */
-    .custom-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.85);
+    body { 
+        background-color: var(--bg-color); 
+        color: var(--text-main);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        overflow-x: hidden;
+    }
+
+    .payment-flat-view {
+        max-width: 420px;
+        margin: 0 auto;
+    }
+
+    .network-badge {
+        background: rgba(38, 161, 123, 0.15);
+        color: #58d68d;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.65rem;
+        font-weight: 700;
         display: flex;
         align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        padding: 20px;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        gap: 6px;
+        border: 1px solid rgba(38, 161, 123, 0.3);
     }
-    .custom-modal-content {
-        background: #121214;
-        border: 1px solid rgba(212,175,55,0.3);
-        border-radius: 28px;
-        max-width: 380px;
-        width: 100%;
-        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+
+    .label-tiny {
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
     }
-    .btn-premium-gold {
-        background: linear-gradient(135deg, #d4af37, #b8952a);
-        color: #0a1f0f;
+
+    .amount-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .currency-label {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--usdt-green);
+    }
+
+    .flat-copy-btn {
+        background: var(--soft-bg);
         border: none;
-        transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(212,175,55,0.3);
+        color: var(--accent-blue);
+        padding: 6px;
+        border-radius: 8px;
+        display: flex;
+        cursor: pointer;
     }
-    .btn-premium-gold:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(212,175,55,0.4);
+
+    .qr-placeholder {
+        background: white;
+        padding: 10px;
+        border-radius: 16px;
+        display: inline-block;
+        box-shadow: 0 0 15px rgba(255,255,255,0.05);
     }
-    .animate-in {
-        animation: modalFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    .qr-missing {
+        padding: 20px;
+        color: #000;
+        font-size: 0.7rem;
     }
-    @keyframes modalFadeIn {
-        from { opacity: 0; transform: scale(0.9) translateY(30px); }
-        to { opacity: 1; transform: scale(1) translateY(0); }
+
+    .data-display {
+        background: var(--soft-bg);
+        padding: 14px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
     }
+    .data-display code {
+        color: #fff;
+        font-size: 0.8rem;
+    }
+
+    .btn-copy-link {
+        background: none;
+        border: none;
+        color: var(--accent-blue);
+        font-weight: 800;
+        font-size: 0.7rem;
+    }
+
+    .network-note {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        display: flex;
+        gap: 6px;
+    }
+    .network-note b { color: var(--warning-gold); }
+
+    .minimal-input {
+        width: 100%;
+        background: var(--soft-bg);
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 14px;
+        color: #fff;
+        font-size: 0.95rem;
+    }
+    .minimal-input:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+    }
+
+    .btn-flat-primary {
+        background: var(--accent-blue);
+        color: #fff;
+        border: none;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    /* Modal */
+    .flat-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center;
+        z-index: 9999; padding: 20px;
+    }
+    .flat-modal-body {
+        background: var(--soft-bg); padding: 20px; border-radius: 24px;
+        text-align: center; width: 100%; max-width: 300px;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in { animation: fadeIn 0.3s ease-out; }
 </style>
 
 <script>
 const amount = '<%= amount %>';
-const method = 'USDT';
 const userId = '<%= user.userID %>';
 
 function closePaymentPage() {
-    // Attempt to close the window/tab
+    if (window.Telegram && Telegram.WebApp) Telegram.WebApp.close();
     window.close();
-    
-    // Fallback for browsers that block window.close()
-    setTimeout(() => {
-        // If still open, try to use Telegram WebApp close if available
-        if (window.Telegram && Telegram.WebApp && typeof Telegram.WebApp.close === 'function') {
-            Telegram.WebApp.close();
-        } else {
-            // Last resort: Update the UI to tell them to close it manually
-            const modalContent = document.querySelector('.custom-modal-content .text-center');
-            if (modalContent) {
-                modalContent.innerHTML = `
-                    <div class="success-icon mb-4">
-                        <i class="bi bi-info-circle-fill" style="font-size: 4rem; color: #d4af37;"></i>
-                    </div>
-                    <h3 class="fw-bold mb-2" style="color: #d4af37;">All Set!</h3>
-                    <p class="mb-4" style="color: rgba(232, 245, 238, 0.8); font-size: 0.9rem;">
-                        You can now safely close this browser tab and return to the Telegram bot.
-                    </p>
-                    <div class="smallest text-muted">Verification is in progress.</div>
-                `;
-            }
-        }
-    }, 300);
+    document.body.innerHTML = '<div style="height:100vh; display:flex; align-items:center; justify-content:center; text-align:center;"><h2 style="color:#007aff;">Done!</h2></div>';
 }
 
 function copyToClipboard(elementId) {
     const text = document.getElementById(elementId).innerText;
-    navigator.clipboard.writeText(text).then(() => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+        document.execCommand('copy');
         if (window.Telegram && Telegram.WebApp && typeof Telegram.WebApp.showPopup === 'function') {
             Telegram.WebApp.showPopup({
                 title: 'Copied!',
-                message: 'Details copied to clipboard',
+                message: 'Saved to clipboard',
                 buttons: [{ type: 'ok' }]
             });
         } else {
-            alert('Details copied to clipboard');
+            const btn = event?.currentTarget;
+            if (btn) {
+                const icon = btn.querySelector('i') || btn;
+                const oldClass = icon.className;
+                icon.className = 'bi bi-check2 text-success';
+                setTimeout(() => { icon.className = oldClass; }, 1500);
+            }
         }
-    });
+    } catch (err) { }
+    document.body.removeChild(textArea);
 }
 
 async function submitDeposit() {
     const txnId = document.getElementById('txnId').value.trim();
-    if (!txnId) {
-        alert('Please enter your Transaction ID / Hash');
-        return;
-    }
+    if (!txnId) return;
 
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
-    btn.innerText = 'Submitting...';
+    btn.innerText = 'PROCESSING...';
 
     try {
         const response = await fetch('/open-app/api/deposit/submit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, amount, method, txnId })
+            body: JSON.stringify({ userId, amount, method: 'USDT', txnId })
         });
-        
-        let result;
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-            result = await response.json();
-        } else {
-            const text = await response.text();
-            console.error("Non-JSON response:", text);
-            throw new Error(`Server returned non-JSON response (${response.status})`);
-        }
-        
+        const result = await response.json();
         if (result.success) {
-            // Show Custom Success Modal
             document.getElementById('successModal').style.display = 'flex';
         } else {
-            alert(result.error || 'Submission failed. Please try again.');
+            alert(result.error);
             btn.disabled = false;
-            btn.innerText = 'Verify & Submit';
+            btn.innerText = 'VERIFY & SUBMIT';
         }
     } catch (err) {
-        console.error("Submission error:", err);
-        alert('An error occurred: ' + err.message);
         btn.disabled = false;
-        btn.innerText = 'Verify & Submit';
+        btn.innerText = 'VERIFY & SUBMIT';
     }
 }
 </script>

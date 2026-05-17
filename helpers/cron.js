@@ -55,7 +55,7 @@ async function processDailyIncome() {
                             break;
                         }
                     }
-                    userTotalDistributed += planDistributed;
+                    userTotalDistributed = parseFloat((userTotalDistributed + planDistributed).toFixed(2));
                     plan.lastIncomeAt = today;
                 }
             }

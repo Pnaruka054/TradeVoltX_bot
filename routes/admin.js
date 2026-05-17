@@ -72,10 +72,10 @@ router.get('/dashboard', authAdmin, async (req, res) => {
         const activeUsers = await User.countDocuments({ "activePlans.isActive": true }) || 0;
         
         const deposits = await Transaction.find({ type: 'deposit', status: 'completed' });
-        const totalDeposited = deposits.reduce((acc, t) => acc + (t.amount || 0), 0) || 0;
+        const totalDeposited = parseFloat(deposits.reduce((acc, t) => acc + (t.amount || 0), 0).toFixed(2)) || 0;
         
         const withdrawals = await Withdrawal.find({ status: 'approved' });
-        const totalWithdrawn = withdrawals.reduce((acc, t) => acc + (t.netAmount || 0), 0) || 0;
+        const totalWithdrawn = parseFloat(withdrawals.reduce((acc, t) => acc + (t.netAmount || 0), 0).toFixed(2)) || 0;
         
         const pendingWithdrawals = await Withdrawal.countDocuments({ status: 'pending' }) || 0;
         const pendingDeposits = await Transaction.countDocuments({ type: 'deposit', status: 'pending' }) || 0;
@@ -85,7 +85,7 @@ router.get('/dashboard', authAdmin, async (req, res) => {
         const newUsersToday = await User.countDocuments({ createdAt: { $gte: today } }) || 0;
         
         const dailyIncomeDistributed = await Transaction.find({ type: 'daily_income', createdAt: { $gte: today } });
-        const totalTodayIncome = dailyIncomeDistributed.reduce((acc, t) => acc + (t.amount || 0), 0) || 0;
+        const totalTodayIncome = parseFloat(dailyIncomeDistributed.reduce((acc, t) => acc + (t.amount || 0), 0).toFixed(2)) || 0;
 
         const recentTransactions = await Transaction.find().sort({ createdAt: -1 }).limit(10) || [];
 

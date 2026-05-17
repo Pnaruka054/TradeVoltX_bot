@@ -6,7 +6,7 @@ const teamIncomeSchema = new mongoose.Schema({
     level: { type: Number, required: true },
     incomeType: { 
         type: String, 
-        enum: ["daily_percentage"],
+        enum: ["daily_percentage", "plan_activation"],
         required: true
     },
     amount: { type: Number, required: true },

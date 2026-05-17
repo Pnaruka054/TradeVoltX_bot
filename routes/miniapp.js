@@ -139,8 +139,8 @@ router.get('/history', async (req, res) => {
     let totalDebit = 0;
 
     transactions.forEach(tx => {
-        if (tx.type === 'withdrawal') totalDebit += tx.amount;
-        else totalCredit += tx.amount;
+        if (tx.type === 'withdrawal') totalDebit = parseFloat((totalDebit + tx.amount).toFixed(2));
+        else totalCredit = parseFloat((totalCredit + tx.amount).toFixed(2));
     });
 
     res.render('pages/miniapp/history', {
@@ -193,7 +193,7 @@ router.get('/team', async (req, res) => {
     }
 
     const teamEarningsList = await require('../models/TeamIncome').find(teamQuery);
-    const totalTeamEarnings = teamEarningsList.reduce((acc, t) => acc + t.amount, 0);
+    const totalTeamEarnings = parseFloat(teamEarningsList.reduce((acc, t) => acc + t.amount, 0).toFixed(2));
 
     const levelMembers = {};
     for (let i = 1; i <= 3; i++) levelMembers[i] = [];
