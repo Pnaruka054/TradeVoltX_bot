@@ -59,6 +59,11 @@ if (process.env.PROJECT_NODE_ENV === 'production') {
 app.use('/admin', adminRoutes);
 app.use('/open-app', miniAppRoutes);
 
+// Catch-all route for unmatched paths (including root)
+app.use((req, res) => {
+    res.send('✅ Bot is alive! but param not found');
+});
+
 // Cron Jobs
 startCron();
 
