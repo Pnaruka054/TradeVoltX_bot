@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const bot = require('../helpers/bot');
+const { notifySupportAdmin } = require('../helpers/notifier');
 
 // Middleware to restrict access (Optional: could be improved with initData validation)
 const isTelegram = (req, res, next) => {
@@ -21,8 +22,6 @@ const formatK = (num) => {
 };
 
 const Setting = require('../models/Setting');
-
-// ... (keep formatK)
 
 // Deposit Payment Page
 router.get('/deposit', async (req, res) => {
@@ -75,11 +74,11 @@ router.post('/api/deposit/submit', async (req, res) => {
             userId: user.userID,
             telegramId: user.telegramId,
             type: 'deposit',
-            amount: parseFloat(amount),
+            amount: parseFloat(parseFloat(amount).toFixed(2)),
             paymentMethod: 'USDT',
             txnId: txnId,
             status: 'pending',
-            description: `USDT Deposit for Plan ${amount} USDT`
+            description: `USDT Deposit for Plan ${parseFloat(amount).toFixed(2)} USDT`
         });
 
         await newTx.save();
@@ -254,21 +253,6 @@ router.get('/api/team/:userId/:level', async (req, res) => {
     const formatted = targetMembers.map(m => {
         const activePlans = (m.activePlans || []).filter(p => p.isActive);
         const totalAmt = activePlans.reduce((acc, p) => acc + p.planAmount, 0);
-        return {
-            userID: m.userID,
-            firstName: m.firstName,
-            isActive: activePlans.length > 0,
-            planAmount: totalAmt,
-            formattedPlanAmount: formatK(totalAmt),
-            createdAt: m.createdAt
-        };
-    });
-    
-    res.json(formatted);
-});
-
-module.exports = router;
-=> acc + p.planAmount, 0);
         return {
             userID: m.userID,
             firstName: m.firstName,

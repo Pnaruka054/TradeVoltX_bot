@@ -35,10 +35,10 @@ async function processDailyIncome() {
                     const dailyIncome = plan.dailyIncome;
 
                     for (let i = 1; i <= missedDays; i++) {
-                        user.walletBalance += dailyIncome;
-                        user.totalEarned += dailyIncome; // For Leaderboard
+                        user.walletBalance = parseFloat((user.walletBalance + dailyIncome).toFixed(2));
+                        user.totalEarned = parseFloat((user.totalEarned + dailyIncome).toFixed(2)); // For Leaderboard
                         plan.daysCompleted += 1;
-                        planDistributed += dailyIncome;
+                        planDistributed = parseFloat((planDistributed + dailyIncome).toFixed(2));
 
                         await Transaction.create({
                             userId: user.userID,

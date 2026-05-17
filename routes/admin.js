@@ -209,16 +209,15 @@ router.post('/users/:userId/adjust-balance', authAdmin, async (req, res) => {
     const user = await User.findOne({ userID: req.params.userId });
     
     if (user) {
-        const adjustAmount = parseFloat(amount);
+        const adjustAmount = parseFloat(parseFloat(amount).toFixed(2));
         if (actionType === 'subtract') {
             if (user.walletBalance < adjustAmount) {
-                // If balance would go below zero, redirect with error
-                // We'll use a simple query param for now as we don't have flash messages set up explicitly
                 return res.redirect(`/admin/users/${req.params.userId}?error=Insufficient balance for deduction`);
             }
-            user.walletBalance -= adjustAmount;
+            user.walletBalance = parseFloat((user.walletBalance - adjustAmount).toFixed(2));
         } else {
-            user.walletBalance += adjustAmount;
+            user.walletBalance = parseFloat((user.walletBalance + adjustAmount).toFixed(2));
+            user.totalEarned = parseFloat((user.totalEarned + adjustAmount).toFixed(2));
         }
 
         await user.save();
@@ -237,43 +236,11 @@ router.post('/users/:userId/adjust-balance', authAdmin, async (req, res) => {
 
 router.post('/users/:userId/activate-plan', authAdmin, async (req, res) => {
     const { planAmount } = req.body;
-    const amount = parseInt(planAmount);
+    const amount = parseFloat(parseFloat(planAmount).toFixed(2));
     const user = await User.findOne({ userID: req.params.userId });
     
     if (user && amount > 0) {
-        if (!user.activePlans) user.activePlans = [];
-        
-        user.activePlans.push({
-            planAmount: amount,
-            dailyIncome: amount * 0.02,
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000),
-            daysCompleted: 0,
-            isActive: true,
-            lastIncomeAt: new Date()
-        });
-        user.state = 'IDLE';
-        await user.save();
-
-        await Transaction.create({
-            userId: user.userID,
-            telegramId: user.telegramId,
-            type: 'deposit',
-            amount: amount,
-            description: `Plan ${amount} USDT activated manually by Admin`,
-            status: 'completed'
-        });
-
-        try {
-            await bot.telegram.sendMessage(user.telegramId, `✅ <b>Plan Activated by Admin!</b>\nYour Plan of ${amount} USDT is now Active.\nDaily Income: ${(amount * 0.02).toFixed(2)} USDT/day`, { 
-                parse_mode: 'HTML',
-                ...bot.getMainMenu(user.userID)
-            });
-            // Notify Uplines
-            await notifyUplinesOfActivation(user);
-        } catch (e) {
-            console.warn(`⚠ Telegram Notification Warning (User ${user.userID}):`, e.description || e.message);
-        }
+        await activateUserPlan(user, amount);
     }
     res.redirect(`/admin/users/${req.params.userId}`);
 });
@@ -454,7 +421,7 @@ router.post('/withdrawals/:id/reject', authAdmin, async (req, res) => {
 
     const user = await User.findOne({ userID: withdrawal.userId });
     if (user) {
-        user.walletBalance += withdrawal.amount; // Refund the full gross amount
+        user.walletBalance = parseFloat((user.walletBalance + withdrawal.amount).toFixed(2));
         await user.save();
     }
 
@@ -574,7 +541,7 @@ router.post('/withdrawals/:id/update-status', authAdmin, async (req, res) => {
     if (status === 'rejected' && (oldStatus === 'pending' || oldStatus === 'approved')) {
         const user = await User.findOne({ userID: wd.userId });
         if (user) {
-            user.walletBalance += wd.amount;
+            user.walletBalance = parseFloat((user.walletBalance + wd.amount).toFixed(2));
             await user.save();
             
             await Transaction.create({

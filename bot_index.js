@@ -5,7 +5,7 @@ const Withdrawal = require('./models/Withdrawal');
 const Setting = require('./models/Setting');
 const RoiCode = require('./models/RoiCode');
 const RoiClaim = require('./models/RoiClaim');
-const { notifyUplinesOfActivation } = require('./helpers/mlm');
+const { notifyUplinesOfActivation, getISTDate } = require('./helpers/mlm');
 const { notifySupportAdmin } = require('./helpers/notifier');
 
 const PLANS = [30, 50, 100, 200, 500, 1000];
@@ -327,7 +327,7 @@ module.exports = (bot) => {
         user.markModified('sessionData');
         await user.save();
 
-        const msg = `💸 <b>Withdraw Funds</b>\nAvailable Balance: ${user.walletBalance.toFixed(2)} USDT\nMinimum Withdrawal: 5 USDT\n\n<b>Enter the amount in USDT you want to withdraw:</b>`;
+        const msg = `💸 <b>Withdraw Funds</b>\nAvailable Balance: ${user.walletBalance.toFixed(2)} USDT\nMinimum Withdrawal: 10 USDT\n\n<b>Enter the amount in USDT you want to withdraw:</b>`;
 
         if(ctx.callbackQuery) {
             await ctx.answerCbQuery();
@@ -375,7 +375,7 @@ module.exports = (bot) => {
 
         const photo = ctx.message.photo[ctx.message.photo.length - 1];
         const fileId = photo.file_id;
-        const amount = user.sessionData.planAmount;
+        const amount = parseFloat(parseFloat(user.sessionData.planAmount).toFixed(2));
         const method = user.sessionData.method;
 
         await Transaction.create({
@@ -383,7 +383,7 @@ module.exports = (bot) => {
             telegramId: user.telegramId,
             type: 'deposit',
             amount: amount,
-            description: `Manual ${method} Deposit for Plan ${amount} USDT`,
+            description: `Manual ${method} Deposit for Plan ${amount.toFixed(2)} USDT`,
             status: 'pending',
             paymentMethod: method,
             paymentScreenshot: fileId
@@ -442,7 +442,6 @@ module.exports = (bot) => {
             }
 
             // Get Current IST Date at midnight for comparison
-            const { getISTDate } = require('./helpers/mlm');
             const todayIST = getISTDate();
 
             // Calculate 50% ROI
@@ -455,8 +454,8 @@ module.exports = (bot) => {
                     // Check if plan was activated before today
                     const planStartDateIST = getISTDate(plan.startDate);
                     if (planStartDateIST < todayIST) {
-                        const halfDaily = plan.dailyIncome / 2;
-                        totalClaimAmount += halfDaily;
+                        const halfDaily = parseFloat((plan.dailyIncome / 2).toFixed(2));
+                        totalClaimAmount = parseFloat((totalClaimAmount + halfDaily).toFixed(2));
                         plan.claimsMade = (plan.claimsMade || 0) + 1;
                         plan.daysCompleted = plan.claimsMade / 2;
                         
@@ -480,8 +479,8 @@ module.exports = (bot) => {
                 return ctx.reply("❌ No eligible active plans found to claim profit from.");
             }
 
-            user.walletBalance += totalClaimAmount;
-            user.totalEarned += totalClaimAmount;
+            user.walletBalance = parseFloat((user.walletBalance + totalClaimAmount).toFixed(2));
+            user.totalEarned = parseFloat((user.totalEarned + totalClaimAmount).toFixed(2));
             user.state = STATES.IDLE;
             await user.save();
 
@@ -522,8 +521,8 @@ module.exports = (bot) => {
                 return ctx.reply("⚠️ Invalid withdrawal method.");
             }
 
-            if (inputAmount < 5) {
-                return ctx.reply(`❌ Minimum withdrawal is 5 USDT.`);
+            if (inputAmount < 10) {
+                return ctx.reply(`❌ Minimum withdrawal is 10 USDT.`);
             }
             if (inputAmount > user.walletBalance) {
                 return ctx.reply(`❌ Insufficient balance. Your balance is ${user.walletBalance.toFixed(2)} USDT.`);
@@ -531,10 +530,10 @@ module.exports = (bot) => {
 
             const botFeeRate = 0.15;
             const adminFeeRate = 0.05;
-            const botFee = inputAmount * botFeeRate;
-            const adminFee = inputAmount * adminFeeRate;
-            const taxAmount = botFee + adminFee;
-            const netAmount = inputAmount - taxAmount;
+            const botFee = parseFloat((inputAmount * botFeeRate).toFixed(2));
+            const adminFee = parseFloat((inputAmount * adminFeeRate).toFixed(2));
+            const taxAmount = parseFloat((botFee + adminFee).toFixed(2));
+            const netAmount = parseFloat((inputAmount - taxAmount).toFixed(2));
 
             // Update Session Data with all details
             user.sessionData.wAmount = inputAmount;
@@ -589,7 +588,7 @@ module.exports = (bot) => {
             return ctx.editMessageText("❌ Insufficient wallet balance. Request cancelled.");
         }
 
-        user.walletBalance -= wAmount;
+        user.walletBalance = parseFloat((user.walletBalance - wAmount).toFixed(2));
         user.state = STATES.IDLE;
         user.sessionData = {};
         user.markModified('sessionData');

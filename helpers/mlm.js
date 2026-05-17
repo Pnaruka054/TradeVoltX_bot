@@ -44,11 +44,11 @@ async function notifyUplinesOfActivation(activatedUser) {
 
         if (hasActivePlan) {
             const percentage = TEAM_LEVEL_PERCENTAGES[level];
-            const commissionAmount = planAmount * percentage;
+            const commissionAmount = parseFloat((planAmount * percentage).toFixed(2));
 
             if (commissionAmount > 0) {
-                upline.walletBalance += commissionAmount;
-                upline.totalEarned += commissionAmount;
+                upline.walletBalance = parseFloat((upline.walletBalance + commissionAmount).toFixed(2));
+                upline.totalEarned = parseFloat((upline.totalEarned + commissionAmount).toFixed(2));
                 await upline.save();
 
                 await TeamIncome.create({
@@ -64,7 +64,7 @@ async function notifyUplinesOfActivation(activatedUser) {
                     telegramId: upline.telegramId,
                     type: 'team_income',
                     amount: commissionAmount,
-                    description: `Team Commission (Level ${level}) from ${activatedUser.firstName} activation of ${planAmount} USDT`,
+                    description: `Level ${level} Commission: ${activatedUser.firstName} (${activatedUser.userID}) activated ${planAmount} USDT`,
                     level: level,
                     relatedUserId: activatedUser.userID,
                     status: 'completed'
@@ -96,9 +96,12 @@ async function notifyUplinesOfActivation(activatedUser) {
 async function activateUserPlan(user, amount, transactionId = null) {
     if (!user.activePlans) user.activePlans = [];
     
+    const amountVal = parseFloat(parseFloat(amount).toFixed(2));
+    const dailyIncome = parseFloat((amountVal * 0.02).toFixed(2));
+
     const newPlan = {
-        planAmount: amount,
-        dailyIncome: amount * 0.02,
+        planAmount: amountVal,
+        dailyIncome: dailyIncome,
         startDate: getISTDate(),
         endDate: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000),
         daysCompleted: 0,
