@@ -84,15 +84,8 @@ router.post('/api/deposit/submit', async (req, res) => {
 
         await newTx.save();
 
-        // Notify Admin via Bot (Optional but recommended)
-        try {
-            const adminMsg = `🆕 <b>New Deposit Request</b>\n\n👤 User: ${user.firstName} (ID: ${user.userID})\n💰 Amount: ${amount} USDT\n💳 Method: USDT\n🔢 ID: <code>${txnId}</code>\n\nPlease verify in the admin panel.`;
-            // Assuming there's a way to get admin chat ID, usually stored in settings or env
-            // For now, we just log it.
-            console.log("Admin Notification:", adminMsg);
-        } catch (err) {
-            console.error("Failed to notify admin:", err);
-        }
+        // Notify Admin via Support Bot
+        notifySupportAdmin(`🆕 <b>New Deposit Request (Mini-App)</b>\n\n👤 User: ${user.firstName} (ID: <code>${user.userID}</code>)\n💰 Amount: ${amount} USDT\n💳 Method: USDT\n🔢 Hash: <code>${txnId}</code>\n\nPlease verify in the admin panel.`);
 
         res.json({ success: true, message: "Deposit proof submitted successfully" });
     } catch (err) {
@@ -261,6 +254,21 @@ router.get('/api/team/:userId/:level', async (req, res) => {
     const formatted = targetMembers.map(m => {
         const activePlans = (m.activePlans || []).filter(p => p.isActive);
         const totalAmt = activePlans.reduce((acc, p) => acc + p.planAmount, 0);
+        return {
+            userID: m.userID,
+            firstName: m.firstName,
+            isActive: activePlans.length > 0,
+            planAmount: totalAmt,
+            formattedPlanAmount: formatK(totalAmt),
+            createdAt: m.createdAt
+        };
+    });
+    
+    res.json(formatted);
+});
+
+module.exports = router;
+=> acc + p.planAmount, 0);
         return {
             userID: m.userID,
             firstName: m.firstName,

@@ -93,7 +93,6 @@ async function getCurrentAdminId() {
 
 // ====================== Main Module ======================
 module.exports = (bot) => {
-    const OWNER_SETUP_TOKEN = process.env.BOT_OWNER_SETUP_TOKEN || "";
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD_SUPPORT || "admin123";
 
     const bcastState = new Map();
@@ -161,46 +160,6 @@ module.exports = (bot) => {
 
         setAdminState.set(fromId, { step: "await_password" });
         await ctx.reply("Please enter the admin password:");
-    });
-
-    bot.command("claim_owner", async (ctx) => {
-        const fromId = Number(ctx.from?.id);
-        const parts = (ctx.message?.text || "").trim().split(/\s+/);
-        const token = parts[1] || "";
-
-        if (!OWNER_SETUP_TOKEN) {
-            await ctx.reply("Server me BOT_OWNER_SETUP_TOKEN set nahi hai.");
-            return;
-        }
-
-        if (!token || token !== OWNER_SETUP_TOKEN) {
-            await ctx.reply("Invalid token.");
-            return;
-        }
-
-        const existingOwner = await getOwnerIdCached();
-        if (existingOwner && existingOwner !== fromId) {
-            await ctx.reply(`Owner already set hai.\nAgar change karna hai to pehle DB se bot_settings key "${OWNER_KEY}" delete karo.`);
-            return;
-        }
-
-        await SupportUser.updateMany({ isAdmin: true }, { $set: { isAdmin: false } }).catch(() => { });
-        await SupportUser.updateOne(
-            { telegramId: fromId },
-            {
-                $set: {
-                    username: ctx.from?.username,
-                    firstName: ctx.from?.first_name,
-                    lastName: ctx.from?.last_name,
-                    isAdmin: true,
-                },
-                $setOnInsert: { telegramId: fromId, createdAt: new Date() },
-            },
-            { upsert: true }
-        ).catch(() => { });
-
-        await setOwnerId(fromId);
-        await ctx.reply("Owner set ✅ Ab users ke messages yahi forward honge.");
     });
 
     bot.command("broadcast", async (ctx) => {

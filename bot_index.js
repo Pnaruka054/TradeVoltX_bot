@@ -6,6 +6,7 @@ const Setting = require('./models/Setting');
 const RoiCode = require('./models/RoiCode');
 const RoiClaim = require('./models/RoiClaim');
 const { notifyUplinesOfActivation } = require('./helpers/mlm');
+const { notifySupportAdmin } = require('./helpers/notifier');
 
 const PLANS = [30, 50, 100, 200, 500, 1000];
 
@@ -394,6 +395,9 @@ module.exports = (bot) => {
         await user.save();
 
         ctx.reply("✅ <b>Deposit proof submitted!</b>\n\nAdmin will verify your payment and activate your plan shortly. You will be notified once it is approved.", { parse_mode: 'HTML', ...bot.getInactiveMenu(user.userID) });
+
+        // Notify Support Admin
+        notifySupportAdmin(`🆕 <b>New Deposit Request (Photo)</b>\n\n👤 User: ${user.firstName} (ID: <code>${user.userID}</code>)\n💰 Plan: ${amount} USDT\n💳 Method: ${method}\n\nPlease check the admin panel.`);
     });
 
     bot.hears('🎁 Claim Profit', async (ctx) => {
@@ -614,6 +618,9 @@ module.exports = (bot) => {
         });
 
         ctx.editMessageText(`⏳ <b>Withdrawal request submitted!</b>\nAdmin will process it shortly.\nRef ID: WIT${withdrawal._id}`, { parse_mode: 'HTML' });
+
+        // Notify Support Admin
+        notifySupportAdmin(`💸 <b>New Withdrawal Request</b>\n\n👤 User: ${user.firstName} (ID: <code>${user.userID}</code>)\n💰 Amount: ${wAmount.toFixed(2)} USDT\n💵 Net: ${netAmount.toFixed(2)} USDT\n🪙 Address: <code>${usdtAddress}</code>\n\nPlease check the admin panel.`);
     });
 
     bot.action('CANCEL_WITHDRAW', async (ctx) => {
