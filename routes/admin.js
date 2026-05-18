@@ -8,7 +8,7 @@ const TeamIncome = require('../models/TeamIncome');
 const RoiCode = require('../models/RoiCode');
 const RoiClaim = require('../models/RoiClaim');
 const bot = require('../helpers/bot');
-const { notifyUplinesOfActivation, activateUserPlan } = require('../helpers/mlm');
+const { notifyUplinesOfActivation, activateUserPlan, getISTDate, getCurrentISTTime } = require('../helpers/mlm');
 const multer = require('multer');
 const path = require('path');
 
@@ -80,8 +80,7 @@ router.get('/dashboard', authAdmin, async (req, res) => {
         const pendingWithdrawals = await Withdrawal.countDocuments({ status: 'pending' }) || 0;
         const pendingDeposits = await Transaction.countDocuments({ type: 'deposit', status: 'pending' }) || 0;
         
-        const today = new Date();
-        today.setHours(0,0,0,0);
+        const today = getISTDate();
         const newUsersToday = await User.countDocuments({ createdAt: { $gte: today } }) || 0;
         
         const dailyIncomeDistributed = await Transaction.find({ type: 'daily_income', createdAt: { $gte: today } });
@@ -202,6 +201,42 @@ router.post('/users/:userId/block', authAdmin, async (req, res) => {
 router.post('/users/:userId/unblock', authAdmin, async (req, res) => {
     await User.updateOne({ userID: req.params.userId }, { isBlocked: false });
     res.redirect(`/admin/users/${req.params.userId}`);
+});
+
+router.post('/users/:userId/delete', authAdmin, async (req, res) => {
+    const userId = req.params.userId;
+    try {
+        const user = await User.findOne({ userID: userId });
+        if (!user) return res.redirect('/admin/users?error=User not found');
+
+        const telegramId = user.telegramId;
+
+        // 1. Delete all transactions for the user
+        await Transaction.deleteMany({ userId });
+        
+        // 2. Delete all withdrawals for the user
+        await Withdrawal.deleteMany({ userId });
+        
+        // 3. Delete all ROI claims for the user
+        await RoiClaim.deleteMany({ userId });
+        
+        // 4. Delete team income records (both as earner and as source)
+        await TeamIncome.deleteMany({ 
+            $or: [{ earnerId: userId }, { sourceId: userId }] 
+        });
+
+        // 5. Delete SupportUser record if exists
+        const SupportUser = require('../models/SupportUser');
+        await SupportUser.deleteOne({ telegramId: Number(telegramId) });
+        
+        // 6. Finally, delete the user record
+        await User.deleteOne({ userID: userId });
+        
+        res.redirect('/admin/users');
+    } catch (err) {
+        console.error("User deletion error:", err);
+        res.redirect(`/admin/users/${userId}?error=Deletion failed: ${err.message}`);
+    }
 });
 
 router.post('/users/:userId/adjust-balance', authAdmin, async (req, res) => {
@@ -390,15 +425,15 @@ router.post('/withdrawals/:id/approve', authAdmin, async (req, res) => {
 
     await Transaction.updateOne({ userId: withdrawal.userId, type: 'withdrawal', status: 'pending' }, { 
         status: 'completed',
-        description: `Withdrawal Approved - Net ${withdrawal.netAmount.toFixed(2)} USDT (20% Fee: ${withdrawal.taxAmount.toFixed(2)} USDT)`
+        description: `Withdrawal Approved - Net ${withdrawal.netAmount.toFixed(2)} USDT (15% Fee: ${withdrawal.taxAmount.toFixed(2)} USDT)`
     });
 
     try {
         let netDisplay = `${withdrawal.netAmount.toFixed(2)} USDT`;
-        let botFeeDisplay = `${(withdrawal.amount * 0.15).toFixed(2)} USDT`;
+        let botFeeDisplay = `${(withdrawal.amount * 0.10).toFixed(2)} USDT`;
         let adminFeeDisplay = `${(withdrawal.amount * 0.05).toFixed(2)} USDT`;
 
-        const msg = `✅ <b>Withdrawal Approved!</b>\n\nYour withdrawal request has been approved and processed.\n\n💰 <b>Net Amount Sent:</b> ${netDisplay}\n\n<b>Fees Breakdown:</b>\n🤖 Bot Fees (15%): ${botFeeDisplay}\n👤 Admin Fees (5%): ${adminFeeDisplay}\n\nPlease check your account shortly.`;
+        const msg = `✅ <b>Withdrawal Approved!</b>\n\nYour withdrawal request has been approved and processed.\n\n💰 <b>Net Amount Sent:</b> ${netDisplay}\n\n<b>Fees Breakdown:</b>\n🤖 Bot Fees (10%): ${botFeeDisplay}\n👤 Admin Fees (5%): ${adminFeeDisplay}\n\nPlease check your account shortly.`;
 
         await bot.telegram.sendMessage(withdrawal.telegramId, msg, { parse_mode: 'HTML', disable_web_page_preview: true });
     } catch (e) {
@@ -570,8 +605,7 @@ router.post('/withdrawals/:id/update-status', authAdmin, async (req, res) => {
 
 // ROI Codes Management
 router.get('/roi-codes', authAdmin, async (req, res) => {
-    const today = new Date();
-    today.setHours(0,0,0,0);
+    const today = getISTDate();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -591,8 +625,7 @@ router.get('/roi-codes', authAdmin, async (req, res) => {
 });
 
 router.post('/roi-codes/generate', authAdmin, async (req, res) => {
-    const today = new Date();
-    today.setHours(0,0,0,0);
+    const today = getISTDate();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -608,11 +641,12 @@ router.post('/roi-codes/generate', authAdmin, async (req, res) => {
         randomCode += characters.charAt(Math.floor(Math.random() * characters.length));
     }
 
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
+    const expiresAt = new Date(getCurrentISTTime().getTime() + 30 * 60 * 1000); // 30 minutes from now
 
     await RoiCode.create({
         code: randomCode,
-        expiresAt: expiresAt
+        expiresAt: expiresAt,
+        createdAt: getCurrentISTTime()
     });
 
     res.redirect('/admin/roi-codes');

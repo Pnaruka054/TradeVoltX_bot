@@ -14,10 +14,15 @@ const TEAM_LEVEL_PERCENTAGES = {
  */
 function getISTDate(dateInput = new Date()) {
     const date = new Date(dateInput);
-    const istString = date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-    const istDate = new Date(istString);
-    istDate.setHours(0, 0, 0, 0);
-    return istDate;
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
+/**
+ * Helper to get current precise Date object in IST
+ */
+function getCurrentISTTime() {
+    return new Date();
 }
 
 /**
@@ -141,5 +146,6 @@ async function activateUserPlan(user, amount, transactionId = null) {
 module.exports = {
     notifyUplinesOfActivation,
     activateUserPlan,
-    getISTDate
+    getISTDate,
+    getCurrentISTTime
 };

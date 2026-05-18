@@ -5,7 +5,7 @@ const Withdrawal = require('./models/Withdrawal');
 const Setting = require('./models/Setting');
 const RoiCode = require('./models/RoiCode');
 const RoiClaim = require('./models/RoiClaim');
-const { notifyUplinesOfActivation, getISTDate } = require('./helpers/mlm');
+const { notifyUplinesOfActivation, getISTDate, getCurrentISTTime } = require('./helpers/mlm');
 const { notifySupportAdmin } = require('./helpers/notifier');
 
 const PLANS = [30, 50, 100, 200, 500, 1000];
@@ -432,7 +432,7 @@ module.exports = (bot) => {
                 return ctx.reply("❌ <b>Invalid Code!</b>\nPlease check the code and try again.", { parse_mode: 'HTML' });
             }
 
-            if (new Date() > roiCode.expiresAt) {
+            if (getCurrentISTTime() > roiCode.expiresAt) {
                 return ctx.reply("⏰ <b>Code Expired!</b>\nThis code was only valid for 30 minutes. You missed this claim.", { parse_mode: 'HTML' });
             }
 
@@ -528,7 +528,7 @@ module.exports = (bot) => {
                 return ctx.reply(`❌ Insufficient balance. Your balance is ${user.walletBalance.toFixed(2)} USDT.`);
             }
 
-            const botFeeRate = 0.15;
+            const botFeeRate = 0.10;
             const adminFeeRate = 0.05;
             const botFee = parseFloat((inputAmount * botFeeRate).toFixed(2));
             const adminFee = parseFloat((inputAmount * adminFeeRate).toFixed(2));
@@ -557,7 +557,7 @@ module.exports = (bot) => {
             user.markModified('sessionData');
             await user.save();
 
-            const msg = `✅ <b>Withdrawal Confirmation (USDT)</b>\n\n💰 <b>Requested Amount:</b> ${inputAmount.toFixed(2)} USDT\n\n<b>Fees Breakdown:</b>\n🤖 Bot Fees (15%): ${botFee.toFixed(2)} USDT\n👤 Admin Fees (5%): ${adminFee.toFixed(2)} USDT\n━━━━━━━━━━━━━━━\n💵 <b>Net Payable:</b> ${netAmount.toFixed(2)} USDT\n\n<b>Payment Details:</b>\n🪙 USDT Address: <code>${user.bankDetails.usdtAddress}</code>\n🌐 Network: BEP20`;
+            const msg = `✅ <b>Withdrawal Confirmation (USDT)</b>\n\n💰 <b>Requested Amount:</b> ${inputAmount.toFixed(2)} USDT\n\n<b>Fees Breakdown:</b>\n🤖 Bot Fees (10%): ${botFee.toFixed(2)} USDT\n👤 Admin Fees (5%): ${adminFee.toFixed(2)} USDT\n━━━━━━━━━━━━━━━\n💵 <b>Net Payable:</b> ${netAmount.toFixed(2)} USDT\n\n<b>Payment Details:</b>\n🪙 USDT Address: <code>${user.bankDetails.usdtAddress}</code>\n🌐 Network: BEP20`;
             const btns = Markup.inlineKeyboard([
                 [Markup.button.callback('✅ Confirm Withdrawal', 'CONFIRM_WITHDRAW')],
                 [Markup.button.callback('❌ Cancel', 'CANCEL_WITHDRAW')]

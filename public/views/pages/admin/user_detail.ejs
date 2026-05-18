@@ -9,9 +9,12 @@
                 </form>
             <% } else { %>
                 <form action="/admin/users/<%= user.userID %>/block" method="POST" class="d-inline">
-                    <button type="submit" class="btn btn-danger">Block User</button>
+                    <button type="submit" class="btn btn-warning">Block User</button>
                 </form>
             <% } %>
+            <form action="/admin/users/<%= user.userID %>/delete" method="POST" class="d-inline" onsubmit="return confirm('❗ ARE YOU SURE? ❗\n\nThis will PERMANENTLY DELETE the user and ALL their related data (Transactions, Withdrawals, Team Income, ROI Claims).\n\nThis action CANNOT be undone.');">
+                <button type="submit" class="btn btn-danger ms-1">Delete User</button>
+            </form>
         </div>
 
 <% if (typeof query !== 'undefined' && query.error) { %>

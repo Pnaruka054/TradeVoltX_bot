@@ -1,4 +1,5 @@
 require('dotenv').config();
+process.env.TZ = 'Asia/Kolkata';
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
