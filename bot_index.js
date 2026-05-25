@@ -104,6 +104,10 @@ module.exports = (bot) => {
     });
 
     bot.start(async (ctx) => {
+        // Developer Attribution
+        const devUsername = process.env.DEVELOPER_TELEGRAM_USERNAME || 'Unknown';
+        await ctx.reply(`Devloped by @${devUsername}`).catch(e => {});
+
         let payload = ctx.startPayload ? ctx.startPayload.trim().toUpperCase() : null;
         const telegramId = ctx.from.id.toString();
         
