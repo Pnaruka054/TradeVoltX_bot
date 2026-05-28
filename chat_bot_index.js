@@ -99,10 +99,6 @@ module.exports = (bot) => {
     const setAdminState = new Map();
 
     bot.start(async (ctx) => {
-        // Developer Attribution
-        const devUsername = process.env.DEVELOPER_TELEGRAM_USERNAME || 'Unknown';
-        await ctx.reply(`Devloped by @${devUsername}`).catch(e => {});
-
         const from = ctx.from || {};
         const telegramId = Number(from.id);
         if (!telegramId) return;
